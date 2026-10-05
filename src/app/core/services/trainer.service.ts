@@ -1,37 +1,56 @@
 import { Service, signal } from '@angular/core';
 import { chords } from '../data/chords.data';
 import { notes } from '../data/notes.data';
-import { Chord } from '../models/chord.model';
-import { Note } from '../models/note.model';
-import { TrainerConfig, TrainerState, TrainerType } from '../models/trainer.model';
+import { TrainerConfig, TrainerItem, TrainerState, TrainerType } from '../models/trainer.model';
 
 @Service()
 export class TrainerService {
+  // Entradas do usuário:
   private readonly config = signal<TrainerConfig>({
-    type: 'note',
+    type: 'chord',
     mode: 'manual',
     duration: 5,
     showComposition: true,
   });
 
+  readonly trainerConfig = this.config.asReadonly();
+
+  setConfig(config: TrainerConfig): void {
+    this.config.set(config);
+  }
+
+  // Momento atual do treinamento:
   private readonly state = signal<TrainerState>({
     currentItem: null,
     remainingTime: 0,
     running: false,
   });
 
-  generate(type: TrainerType): Note | Chord {
+  readonly trainerState = this.state.asReadonly();
+
+  private getItemKey(item: TrainerItem): string {
+    return 'symbol' in item ? item.symbol : item.name;
+  }
+
+  // TrainerItem: type para 'Note | Chord':
+  generate(type: TrainerType, currentItem: TrainerItem | null): TrainerItem {
     // Obtém a lista de notas ou acordes:
     const items = type === 'note' ? notes : chords;
 
-    // Sorteia um índice:
-    const index = Math.floor(Math.random() * items.length);
-
-    if (!index) {
+    // Se tem apenas uma nota/acorde retorna ele:
+    if (items.length === 1) {
       return items[0];
     }
 
-    return items[index];
+    // Se existir uma nota/acorde remove ele da lista e retorna a lista sem ele, caso não exista retorna a lista completa:
+    const availableItems = currentItem
+      ? items.filter((item) => this.getItemKey(item) !== this.getItemKey(currentItem))
+      : items;
+
+    // Sorteia um índice:
+    const index = Math.floor(Math.random() * availableItems.length);
+
+    return availableItems[index];
   }
 
   start(): void {
@@ -44,7 +63,9 @@ export class TrainerService {
   }
 
   next(): void {
-    const item = this.generate(this.config().type);
+    const currentItem = this.state().currentItem;
+
+    const item = this.generate(this.config().type, currentItem);
 
     this.state.update((state) => ({
       ...state,

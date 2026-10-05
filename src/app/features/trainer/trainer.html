@@ -1,0 +1,36 @@
+<main>
+  <img src="/images/logo.png" alt="Logo do aplicativo" class="max-w-64" />
+  <h1>Learn Piano</h1>
+
+  @if (trainerService.trainerState().currentItem; as currentItem) {
+    <section>
+      <h2>{{ currentItem.name }}</h2>
+
+      @if ('notes' in currentItem) {
+        <p>
+          Composição:
+          @for (notes of currentItem.notes; track notes.symbol) {
+            {{ notes.symbol }}
+          }
+        </p>
+      }
+    </section>
+  }
+
+  <div class="flex gap-1.5">
+    <button
+      type="button"
+      (click)="start()"
+      class="bg-amber-300 active:bg-amber-300 hover:bg-amber-400 w-30 h-15"
+    >
+      Iniciar
+    </button>
+    <button
+      type="button"
+      (click)="next()"
+      class="bg-amber-300 active:bg-amber-300 hover:bg-amber-400 w-30 h-15"
+    >
+      Próximo
+    </button>
+  </div>
+</main>
